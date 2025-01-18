@@ -39,9 +39,9 @@ Devvit.addCustomPostType({
     return (
       <vstack height="100%" width="100%" gap="medium" alignment="center middle">
         <hstack width="95%">
-          <vstack>
+          <vstack width="40%">
             <text wrap>Makes about 2 dozen</text>
-            <text wrap>Ingredients</text>
+            <text wrap>Ingredients:</text>
             <text size="small" wrap>1 1/2 C sugar</text>
             <text size="small" wrap>1C butter, roomish temp</text>
             <text size="small" wrap>2 eggs</text>
@@ -49,7 +49,9 @@ Devvit.addCustomPostType({
             <text size="small" wrap>1 tsp baking soda</text>
             <text size="small" wrap>1/4 tsp salt</text>
             <text size="small" wrap>2 tsp cream of tartar</text>
-            <text size="small" wrap>For rolling: 3 Tbsp sugar 3 tsp cinnamon</text>
+            <text wrap>For rolling:</text>
+            <text size="small" wrap>3 Tbsp sugar</text>
+            <text size="small" wrap>3 tsp cinnamon</text>
           </vstack>
           <image
             url="my-grandmas-snickerdoodles-recipe-barely-saved-from-being-v0-5o39g3k32lv91.jpeg"
