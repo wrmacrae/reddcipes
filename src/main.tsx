@@ -5,18 +5,75 @@ Devvit.configure({
   redditAPI: true,
 });
 
+const postForm = Devvit.createForm(
+  (data) => {
+    return {
+      fields: [
+        {
+          type: 'string',
+          name: 'title',
+          label: 'Title',
+          required: true,
+        },
+        {
+          type: 'image',
+          name: 'picture',
+          label: 'Picture of the result',
+          required: false,
+        },
+        {
+          type: 'string',
+          name: 'intro',
+          label: 'One-liner intro note. (Servings / time / pre-heat temperature; Optional)',
+          required: false,
+        },
+        {
+          type: 'paragraph',
+          name: 'ingredients',
+          label: 'Ingredients: (One per line with measurements)',
+          required: true,
+        },
+        {
+          type: 'paragraph',
+          name: 'instructions',
+          label: 'Instructions: (One step per line. Numbers optional.)',
+          required: false,
+        }
+       ],
+       title: 'Post a Recipe',
+       acceptLabel: 'Post',
+    } as const; 
+  }, async ({ values }, context) => {
+    const { reddit, ui } = context
+    const { title, picture, intro, ingredients, instructions } = values
+    if (!values.start) return;
+    const subredditName = (await reddit.getCurrentSubreddit()).name
+    const post = await reddit.submitPost({
+      title: title,
+      text: ingredients,
+      subredditName: subredditName,
+      preview: (
+        <vstack>
+          <text color="black white">Loading...</text>
+        </vstack>
+      ),
+    });
+    ui.navigateTo(post);
+  }
+);
+
 // Add a menu item to the subreddit menu for instantiating the new experience post
 Devvit.addMenuItem({
   label: "Grandma's Snickerdoodle Cookies",
   location: 'subreddit',
   forUserType: 'moderator',
-  onPress: async (_event, context) => {
+  onPress: async (_, context) => {
     const { reddit, ui } = context;
-    ui.showToast("Submitting your post - upon completion you'll navigate there.");
+    ui.showForm(postForm);
 
     const subreddit = await reddit.getCurrentSubreddit();
     const post = await reddit.submitPost({
-      title: 'My devvit post',
+      title: "Grandma's Snickerdoodle Cookies",
       subredditName: subreddit.name,
       // The preview appears while the post loads
       preview: (
@@ -25,7 +82,6 @@ Devvit.addMenuItem({
         </vstack>
       ),
     });
-    ui.navigateTo(post);
   },
 });
 
