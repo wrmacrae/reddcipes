@@ -7,7 +7,7 @@ Devvit.configure({
 
 // Add a menu item to the subreddit menu for instantiating the new experience post
 Devvit.addMenuItem({
-  label: 'Add my post',
+  label: "Grandma's Snickerdoodle Cookies",
   location: 'subreddit',
   forUserType: 'moderator',
   onPress: async (_event, context) => {
@@ -34,13 +34,14 @@ Devvit.addCustomPostType({
   name: 'Experience Post',
   height: 'regular',
   render: (_context) => {
-    const [counter, setCounter] = useState(0);
+    const [showInstructions, setShowInstructions] = useState(false);
 
     return (
       <vstack height="100%" width="100%" gap="medium" alignment="center middle">
         <hstack width="95%">
-          <vstack width="40%">
+          <vstack width="35%" alignment="middle">
             <text wrap>Makes about 2 dozen</text>
+            <spacer></spacer>
             <text wrap>Ingredients:</text>
             <text size="small" wrap>1 1/2 C sugar</text>
             <text size="small" wrap>1C butter, roomish temp</text>
@@ -49,31 +50,38 @@ Devvit.addCustomPostType({
             <text size="small" wrap>1 tsp baking soda</text>
             <text size="small" wrap>1/4 tsp salt</text>
             <text size="small" wrap>2 tsp cream of tartar</text>
+            <spacer></spacer>
             <text wrap>For rolling:</text>
             <text size="small" wrap>3 Tbsp sugar</text>
             <text size="small" wrap>3 tsp cinnamon</text>
+            <spacer></spacer>
+            <button width="93%" onPress={() => setShowInstructions(!showInstructions)}>{showInstructions ? "Picture" : "Instructions"}</button>
           </vstack>
+          { showInstructions ?
+          <vstack gap="none">
+            <text size="small" wrap>This makes a pretty stiff dough so is best done with an electric mixer.</text>
+            <spacer></spacer>
+            <text size="small" wrap>1. Cream together sugar and butter</text>
+            <text size="small" wrap>2. Add eggs and mix well</text>
+            <text size="small" wrap>3. In separate bowl, mix dry ingredients (flour, baking soda, salt, cream of tartar)</text>
+            <text size="small" wrap>4. Add dry ingredients to wet, in two or three additions</text>
+            <text size="small" wrap>5. Chill dough for at least 30 min</text>
+            <text size="small" wrap>6. Roll dough into balls approx 1.5”</text>
+            <text size="small" wrap>7. Roll balls in cinnamon/sugar mixture</text>
+            <text size="small" wrap>8. Bake on ungreased cookie sheet at 400° for 9 minutes</text>
+            <text size="small" wrap>9. Let cool on rack and enjoy ❤️</text>
+          </vstack>
+          :
           <image
             url="my-grandmas-snickerdoodles-recipe-barely-saved-from-being-v0-5o39g3k32lv91.jpeg"
             description="cookie"
             imageHeight={480}
             imageWidth={640}
-            height="240px"
-            width="320px"
+            height="300px"
+            width="400px"
           />
+          }
         </hstack>
-        {/* <vstack gap="none">
-          <text size="small" wrap>This makes a pretty stiff dough so is best done with an electric mixer.</text>
-          <text size="small" wrap>1. Cream together sugar and butter</text>
-          <text size="small" wrap>2. Add eggs and mix well</text>
-          <text size="small" wrap>3. In separate bowl, mix dry ingredients (flour, baking soda, salt, cream of tartar)</text>
-          <text size="small" wrap>4. Add dry ingredients to wet, in two or three additions</text>
-          <text size="small" wrap>5. Chill dough for at least 30 min</text>
-          <text size="small" wrap>6. Roll dough into balls approx 1.5”</text>
-          <text size="small" wrap>7. Roll balls in cinnamon/sugar mixture</text>
-          <text size="small" wrap>8. Bake on ungreased cookie sheet at 400° for 9 minutes</text>
-          <text size="small" wrap>9. Let cool on rack and enjoy ❤️</text>
-          </vstack> */}
       </vstack>
     );
   },
