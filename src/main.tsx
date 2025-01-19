@@ -89,9 +89,9 @@ Devvit.addMenuItem({
 });
 
 function formatIntro(intro: string) {
-  return <vstack>
+  return <vstack backgroundColor='#cccccc' borderColor='black' cornerRadius='medium' width="93%">
       <text wrap>{intro}</text>
-      <spacer></spacer>
+      <spacer shape='thin'></spacer>
     </vstack>
 }
 
@@ -108,14 +108,14 @@ function formatInstructions(instructions: string) {
 }
 
 function htmlForPicture(picture: string) {
-  return <image
-            url="my-grandmas-snickerdoodles-recipe-barely-saved-from-being-v0-5o39g3k32lv91.jpeg"
+  return <vstack cornerRadius='large'>
+          <image url="my-grandmas-snickerdoodles-recipe-barely-saved-from-being-v0-5o39g3k32lv91.jpeg"
             description="cookie"
             imageHeight={480}
             imageWidth={640}
             height="300px"
             width="400px"
-          />
+          /></vstack>
 }
 
 Devvit.addCustomPostType({
@@ -142,7 +142,7 @@ Devvit.addCustomPostType({
         <hstack width="95%">
           <vstack width="35%" alignment="middle">
             {formatIntro(data.intro)}
-            <text wrap>Ingredients:</text>
+            <text style='heading' outline='thin'>Ingredients:</text>
             {formatIngredients(data.ingredients)}
             <spacer></spacer>
             <button width="93%" onPress={() => setShowInstructions(!showInstructions)}>{showInstructions ? "Picture" : "Instructions"}</button>
