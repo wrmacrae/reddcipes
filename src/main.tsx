@@ -1,9 +1,27 @@
 // Learn more at developers.reddit.com/docs
-import { Devvit, useState } from '@devvit/public-api';
+import { Devvit, RedditAPIClient, RedisClient, useState, useAsync } from '@devvit/public-api';
 
 Devvit.configure({
   redditAPI: true,
+  redis: true,
+  media: true,
 });
+
+async function makeRecipePost(redis: RedisClient, reddit: RedditAPIClient, title: string, picture: string, intro: string, ingredients: string, instructions: string) {
+  const subredditName = (await reddit.getCurrentSubreddit()).name
+  const post = await reddit.submitPost({
+    title: title,
+    subredditName: subredditName,
+    preview: (
+      <vstack>
+        <text color="black white">Loading...</text>
+      </vstack>
+    ),
+  });
+  await redis.hSet(post.id, { title: title, picture: picture, intro: intro, ingredients: ingredients, instructions: instructions })
+  return post.id
+}
+
 
 const postForm = Devvit.createForm(
   (data) => {
@@ -19,13 +37,13 @@ const postForm = Devvit.createForm(
           type: 'image',
           name: 'picture',
           label: 'Picture of the result',
-          required: false,
+          required: true,
         },
         {
           type: 'string',
           name: 'intro',
           label: 'One-liner intro note. (Servings / time / pre-heat temperature; Optional)',
-          required: false,
+          required: true,
         },
         {
           type: 'paragraph',
@@ -37,98 +55,60 @@ const postForm = Devvit.createForm(
           type: 'paragraph',
           name: 'instructions',
           label: 'Instructions: (One step per line. Numbers optional.)',
-          required: false,
+          required: true,
         }
        ],
        title: 'Post a Recipe',
        acceptLabel: 'Post',
     } as const; 
   }, async ({ values }, context) => {
-    const { reddit, ui } = context
+    const { redis, reddit, ui } = context
     const { title, picture, intro, ingredients, instructions } = values
-    if (!values.start) return;
-    const subredditName = (await reddit.getCurrentSubreddit()).name
-    const post = await reddit.submitPost({
-      title: title,
-      text: ingredients,
-      subredditName: subredditName,
-      preview: (
-        <vstack>
-          <text color="black white">Loading...</text>
-        </vstack>
-      ),
-    });
-    ui.navigateTo(post);
+    console.log("Picture")
+    console.log(picture)
+    const response = await context.media.upload({
+      url: picture,
+      type: 'image',
+    })
+    console.log("response.mediaId")
+    console.log(response.mediaId)
+    const postId = await makeRecipePost(redis, reddit, title, response.mediaId, intro, ingredients, instructions)
+    // context.ui.navigateTo(postId);
   }
 );
 
 // Add a menu item to the subreddit menu for instantiating the new experience post
 Devvit.addMenuItem({
-  label: "Grandma's Snickerdoodle Cookies",
+  label: "Post a New Recipe",
   location: 'subreddit',
   forUserType: 'moderator',
   onPress: async (_, context) => {
     const { reddit, ui } = context;
     ui.showForm(postForm);
-
-    const subreddit = await reddit.getCurrentSubreddit();
-    const post = await reddit.submitPost({
-      title: "Grandma's Snickerdoodle Cookies",
-      subredditName: subreddit.name,
-      // The preview appears while the post loads
-      preview: (
-        <vstack height="100%" width="100%" alignment="middle center">
-          <text size="large">Loading ...</text>
-        </vstack>
-      ),
-    });
-  },
+ },
 });
 
-// Add a post type definition
-Devvit.addCustomPostType({
-  name: 'Experience Post',
-  height: 'regular',
-  render: (_context) => {
-    const [showInstructions, setShowInstructions] = useState(false);
+function formatIntro(intro: string) {
+  return <vstack>
+      <text wrap>{intro}</text>
+      <spacer></spacer>
+    </vstack>
+}
 
-    return (
-      <vstack height="100%" width="100%" gap="medium" alignment="center middle">
-        <hstack width="95%">
-          <vstack width="35%" alignment="middle">
-            <text wrap>Makes about 2 dozen</text>
-            <spacer></spacer>
-            <text wrap>Ingredients:</text>
-            <text size="small" wrap>1 1/2 C sugar</text>
-            <text size="small" wrap>1C butter, roomish temp</text>
-            <text size="small" wrap>2 eggs</text>
-            <text size="small" wrap>2 3/4 C flour (375g)</text>
-            <text size="small" wrap>1 tsp baking soda</text>
-            <text size="small" wrap>1/4 tsp salt</text>
-            <text size="small" wrap>2 tsp cream of tartar</text>
-            <spacer></spacer>
-            <text wrap>For rolling:</text>
-            <text size="small" wrap>3 Tbsp sugar</text>
-            <text size="small" wrap>3 tsp cinnamon</text>
-            <spacer></spacer>
-            <button width="93%" onPress={() => setShowInstructions(!showInstructions)}>{showInstructions ? "Picture" : "Instructions"}</button>
-          </vstack>
-          { showInstructions ?
-          <vstack gap="none">
-            <text size="small" wrap>This makes a pretty stiff dough so is best done with an electric mixer.</text>
-            <spacer></spacer>
-            <text size="small" wrap>1. Cream together sugar and butter</text>
-            <text size="small" wrap>2. Add eggs and mix well</text>
-            <text size="small" wrap>3. In separate bowl, mix dry ingredients (flour, baking soda, salt, cream of tartar)</text>
-            <text size="small" wrap>4. Add dry ingredients to wet, in two or three additions</text>
-            <text size="small" wrap>5. Chill dough for at least 30 min</text>
-            <text size="small" wrap>6. Roll dough into balls approx 1.5”</text>
-            <text size="small" wrap>7. Roll balls in cinnamon/sugar mixture</text>
-            <text size="small" wrap>8. Bake on ungreased cookie sheet at 400° for 9 minutes</text>
-            <text size="small" wrap>9. Let cool on rack and enjoy ❤️</text>
-          </vstack>
-          :
-          <image
+function formatIngredients(ingredients: string) {
+  return <vstack>
+      {ingredients.split("\n").map((ingredient: string) => <text size="small" wrap>{ingredient}</text>)}
+    </vstack>
+}
+
+function formatInstructions(instructions: string) {
+  return <vstack>
+      {instructions.split("\n").map((step: string) =>  <text size="small" wrap>{step}</text>)}
+    </vstack>
+}
+
+function htmlForPicture(picture: string) {
+  return <image
             url="my-grandmas-snickerdoodles-recipe-barely-saved-from-being-v0-5o39g3k32lv91.jpeg"
             description="cookie"
             imageHeight={480}
@@ -136,6 +116,43 @@ Devvit.addCustomPostType({
             height="300px"
             width="400px"
           />
+}
+
+Devvit.addCustomPostType({
+  name: 'Experience Post',
+  height: 'regular',
+  render: (context) => {
+    const [showInstructions, setShowInstructions] = useState(false);
+    const { data, loading, error } = useAsync(async () => {
+      return await context.redis.hGetAll(context.postId!);
+    });
+    if (loading) {
+      return <text>Loading...</text>;
+    }
+    
+    if (error) {
+      return <text>Error: {error.message}</text>;
+    }
+    
+    if (!data) {
+      return <text>No data available</text>;
+    }
+    return (
+      <vstack height="100%" width="100%" gap="medium" alignment="center middle">
+        <hstack width="95%">
+          <vstack width="35%" alignment="middle">
+            {formatIntro(data.intro)}
+            <text wrap>Ingredients:</text>
+            {formatIngredients(data.ingredients)}
+            <spacer></spacer>
+            <button width="93%" onPress={() => setShowInstructions(!showInstructions)}>{showInstructions ? "Picture" : "Instructions"}</button>
+          </vstack>
+          { showInstructions ?
+          <vstack gap="none">
+            {formatInstructions(data.instructions)}
+          </vstack>
+          :
+          htmlForPicture(data!.picture)
           }
         </hstack>
       </vstack>
