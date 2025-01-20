@@ -24,7 +24,8 @@ async function makeRecipePost(redis: RedisClient, reddit: RedditAPIClient, title
 
 
 const postForm = Devvit.createForm(
-    {
+  (data) => {
+    return {
       fields: [
         {
           type: 'string',
@@ -64,6 +65,7 @@ const postForm = Devvit.createForm(
        ],
        title: 'Post a Recipe',
        acceptLabel: 'Post',
+      } as const; 
     }, async ({ values }, context) => {
     const { redis, reddit, ui } = context
     const { title, picture, intro, ingredients, instructions, link } = values
@@ -71,7 +73,7 @@ const postForm = Devvit.createForm(
       url: picture,
       type: 'image',
     })
-    const postId = await makeRecipePost(redis, reddit, title, picture, ingredients, intro ?? "", instructions ?? "", link ?? "" )
+    const postId = await makeRecipePost(redis, reddit, title, response.mediaUrl, ingredients, intro ?? "", instructions ?? "", link ?? "" )
   }
 );
 
@@ -88,9 +90,8 @@ Devvit.addMenuItem({
 
 function formatIntro(intro: string) {
   return intro != "" ?
-    <vstack backgroundColor='#cccccc' borderColor='black' cornerRadius='medium' width="93%">
-      <text wrap>{intro}</text>
-      <spacer shape='thin'></spacer>
+    <vstack backgroundColor='#cccccc' borderColor='black' cornerRadius='medium' width="93%" padding='small'>
+      <text wrap color='black' alignment='center middle' weight='bold'>{intro}</text>
     </vstack>
     : <vstack/>
 }
