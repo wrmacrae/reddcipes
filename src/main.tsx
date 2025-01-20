@@ -117,8 +117,10 @@ function htmlForPicture(picture: string) {
           <image url={picture}
             description="cookie"
             resizeMode='cover'
-            height="100"
-            width="100"
+            imageHeight={480}
+            imageWidth={640}
+            height="300px"
+            width="400px"
           /></vstack>
 }
 
@@ -194,7 +196,7 @@ Devvit.addCustomPostType({
       }
     );
     return (
-
+      <vstack>
         <hstack width="98%" height="98%" padding='small'>
           <vstack width="40%" alignment="middle" padding='small'>
             {formatIntro(data.intro)}
