@@ -48,13 +48,13 @@ const postForm = Devvit.createForm(
         {
           type: 'paragraph',
           name: 'ingredients',
-          label: 'Ingredients: (One per line with measurements)',
+          label: 'Ingredients: (One per line with measurements.)',
           required: true,
         },
         {
           type: 'paragraph',
           name: 'instructions',
-          label: 'Instructions: (One step per line. Numbers optional.)',
+          label: 'Instructions: (One step per line. Do not number.)',
           required: true,
         }
        ],
@@ -103,16 +103,16 @@ function formatIngredients(ingredients: string) {
 
 function formatInstructions(instructions: string) {
   return <vstack>
-      {instructions.split("\n").map((step: string) =>  <text size="small" wrap>{step}</text>)}
+      {Array.from(instructions.split("\n").entries()).map((value: [number, string]) => <text size="small" wrap>{(value[0] + 1) + ". " + value[1]}</text>)}
     </vstack>
 }
 
 function htmlForPicture(picture: string) {
   return <vstack cornerRadius='large'>
           <image url="my-grandmas-snickerdoodles-recipe-barely-saved-from-being-v0-5o39g3k32lv91.jpeg"
-            description="cookie"
             imageHeight={480}
             imageWidth={640}
+            description="cookie"
             height="300px"
             width="400px"
           /></vstack>
@@ -120,7 +120,7 @@ function htmlForPicture(picture: string) {
 
 Devvit.addCustomPostType({
   name: 'Experience Post',
-  height: 'regular',
+  height: 'tall',
   render: (context) => {
     const [showInstructions, setShowInstructions] = useState(false);
     const { data, loading, error } = useAsync(async () => {
@@ -149,6 +149,7 @@ Devvit.addCustomPostType({
           </vstack>
           { showInstructions ?
           <vstack gap="none">
+            <text style='heading' outline='thin'>Directions:</text>
             {formatInstructions(data.instructions)}
           </vstack>
           :
