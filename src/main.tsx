@@ -64,15 +64,11 @@ const postForm = Devvit.createForm(
   }, async ({ values }, context) => {
     const { redis, reddit, ui } = context
     const { title, picture, intro, ingredients, instructions } = values
-    console.log("Picture")
-    console.log(picture)
     const response = await context.media.upload({
       url: picture,
       type: 'image',
     })
-    console.log("response.mediaId")
-    console.log(response.mediaId)
-    const postId = await makeRecipePost(redis, reddit, title, response.mediaId, intro, ingredients, instructions)
+    const postId = await makeRecipePost(redis, reddit, title, response.mediaUrl, intro, ingredients, instructions)
     // context.ui.navigateTo(postId);
   }
 );
@@ -109,7 +105,7 @@ function formatInstructions(instructions: string) {
 
 function htmlForPicture(picture: string) {
   return <vstack cornerRadius='large'>
-          <image url="my-grandmas-snickerdoodles-recipe-barely-saved-from-being-v0-5o39g3k32lv91.jpeg"
+          <image url={picture}
             imageHeight={480}
             imageWidth={640}
             description="cookie"
