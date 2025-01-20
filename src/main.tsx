@@ -85,32 +85,34 @@ Devvit.addMenuItem({
 });
 
 function formatIntro(intro: string) {
-  return <vstack backgroundColor='#cccccc' borderColor='black' cornerRadius='medium' width="93%">
-      <text wrap>{intro}</text>
-      <spacer shape='thin'></spacer>
+  return <vstack backgroundColor='#cccccc' borderColor='black' cornerRadius='medium' width="93%" padding='small'>
+      <text wrap color='black' alignment='center middle' weight='bold'>{intro}</text>
     </vstack>
 }
 
 function formatIngredients(ingredients: string) {
-  return <vstack>
-      {ingredients.split("\n").map((ingredient: string) => <text size="small" wrap>{ingredient}</text>)}
+  return <vstack maxHeight="70">
+      {Array.from(ingredients.split("\n").entries()).map((value: [number, string]) => <text size="medium" width='70' wrap>{ "- " + value[1]}</text>)}
     </vstack>
 }
 
 function formatInstructions(instructions: string) {
-  return <vstack>
-      {Array.from(instructions.split("\n").entries()).map((value: [number, string]) => <text size="small" wrap>{(value[0] + 1) + ". " + value[1]}</text>)}
+  return <vstack maxHeight="90">
+      {Array.from(instructions.split("\n").entries()).map((value: [number, string]) =>
+      <vstack>
+        <text size="medium" width='60' wrap>{(value[0] + 1) + ". " + value[1]}</text>
+      <spacer shape='thin' size='xsmall'></spacer>
+      </vstack>)}
     </vstack>
 }
 
 function htmlForPicture(picture: string) {
-  return <vstack cornerRadius='large'>
+  return <vstack cornerRadius='large' grow>
           <image url={picture}
-            imageHeight={480}
-            imageWidth={640}
             description="cookie"
-            height="300px"
-            width="400px"
+            resizeMode='cover'
+            height="100"
+            width="100"
           /></vstack>
 }
 
@@ -134,9 +136,9 @@ Devvit.addCustomPostType({
       return <text>No data available</text>;
     }
     return (
-      <vstack height="100%" width="100%" gap="medium" alignment="center middle">
-        <hstack width="95%">
-          <vstack width="35%" alignment="middle">
+
+        <hstack width="98%" height="98%" padding='small'>
+          <vstack width="40%" alignment="middle" padding='small'>
             {formatIntro(data.intro)}
             <text style='heading' outline='thin'>Ingredients:</text>
             {formatIngredients(data.ingredients)}
@@ -144,7 +146,7 @@ Devvit.addCustomPostType({
             <button width="93%" onPress={() => setShowInstructions(!showInstructions)}>{showInstructions ? "Picture" : "Instructions"}</button>
           </vstack>
           { showInstructions ?
-          <vstack gap="none">
+          <vstack gap="none" alignment='middle'>
             <text style='heading' outline='thin'>Directions:</text>
             {formatInstructions(data.instructions)}
           </vstack>
@@ -152,7 +154,7 @@ Devvit.addCustomPostType({
           htmlForPicture(data!.picture)
           }
         </hstack>
-      </vstack>
+
     );
   },
 });
