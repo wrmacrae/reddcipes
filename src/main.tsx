@@ -71,7 +71,7 @@ const postForm = Devvit.createForm(
       url: picture,
       type: 'image',
     })
-    makeRecipePost(redis, reddit, title, picture, ingredients, intro ?? "", instructions ?? "", link ?? "" )
+    const postId = await makeRecipePost(redis, reddit, title, picture, ingredients, intro ?? "", instructions ?? "", link ?? "" )
   }
 );
 
