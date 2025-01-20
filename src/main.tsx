@@ -71,7 +71,7 @@ const postForm = Devvit.createForm(
       url: picture,
       type: 'image',
     })
-    await redis.hSet(post.id, { title: title, picture: picture, ingredients: ingredients, intro: intro ?? "", instructions: instructions ?? "", link: link ?? "" })
+    makeRecipePost(redis, reddit, title, picture, ingredients, intro ?? "", instructions ?? "", link ?? "" )
   }
 );
 
