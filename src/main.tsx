@@ -113,15 +113,15 @@ function formatInstructions(instructions: string) {
 }
 
 function htmlForPicture(picture: string) {
-  return <vstack cornerRadius='large' grow>
+  return <hstack cornerRadius='large' height='95%' alignment='middle' grow>
           <image url={picture}
             description="cookie"
+            height="100%"
+            width="100%"
             resizeMode='cover'
-            imageHeight={480}
-            imageWidth={640}
-            height="300px"
-            width="400px"
-          /></vstack>
+            // imageHeight={480}
+            // imageWidth={640}
+          /></hstack>
 }
 
 Devvit.addCustomPostType({
@@ -196,8 +196,9 @@ Devvit.addCustomPostType({
       }
     );
     return (
-      <vstack>
-        <hstack width="98%" height="98%" padding='small'>
+      <vstack width="98%" height="98%" padding='small'>
+        {/* height here in hstack will need to change based on whether the edit button appears */}
+        <hstack width="98%" height="90%" padding='small'>
           <vstack width="40%" alignment="middle" padding='small'>
             {formatIntro(data.intro)}
             <text style='heading' outline='thin'>Ingredients:</text>
@@ -218,8 +219,8 @@ Devvit.addCustomPostType({
           htmlForPicture(data!.picture)
           }
         </hstack>
-        {data.link != "" ? <text color="blue" text-decoration="underline" onPress={() => context.ui.navigateTo(data.link)}>{data.link}</text>
-        : <vstack/>}
+        {/* {data.link != "" ? <text color="blue" text-decoration="underline" onPress={() => context.ui.navigateTo(data.link)}>{data.link}</text>
+        : <vstack/>} */}
         <button onPress={() => context.ui.showForm(editForm)}>Edit</button>
       </vstack>
     );
