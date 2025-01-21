@@ -7,7 +7,7 @@ Devvit.configure({
   media: true,
 });
 
-async function makeRecipePost(redis: RedisClient, reddit: RedditAPIClient, title: string, picture: string, ingredients: string, intro: string, instructions: string, link: string) {
+async function makeRecipePost(redis: RedisClient, reddit: RedditAPIClient, title: string, picture: string, ingredients: string, intro: string, instructions: string) {
   const subredditName = (await reddit.getCurrentSubreddit()).name
   const post = await reddit.submitPost({
     title: title,
@@ -18,7 +18,7 @@ async function makeRecipePost(redis: RedisClient, reddit: RedditAPIClient, title
       </vstack>
     ),
   });
-  await redis.hSet(post.id, { title: title, picture: picture, ingredients: ingredients, intro: intro, instructions: instructions, link: link })
+  await redis.hSet(post.id, { title: title, picture: picture, ingredients: ingredients, instructions: instructions })
   return post.id
 }
 
@@ -57,23 +57,18 @@ const postForm = Devvit.createForm(
           label: 'Instructions: (One step per line. Do not number.)',
           required: false,
         },
-        { type: 'string',
-          name: 'link',
-          label: 'Link to full recipe',
-          required: false,
-        },
        ],
        title: 'Post a Recipe',
        acceptLabel: 'Post',
       } as const; 
     }, async ({ values }, context) => {
     const { redis, reddit, ui } = context
-    const { title, picture, intro, ingredients, instructions, link } = values
+    const { title, picture, intro, ingredients, instructions } = values
     const response = await context.media.upload({
       url: picture,
       type: 'image',
     })
-    const postId = await makeRecipePost(redis, reddit, title, response.mediaUrl, ingredients, intro ?? "", instructions ?? "", link ?? "" )
+    const postId = await makeRecipePost(redis, reddit, title, response.mediaUrl, ingredients, intro ?? "", instructions ?? "" )
   }
 );
 
@@ -97,16 +92,16 @@ function formatIntro(intro: string) {
 }
 
 function formatIngredients(ingredients: string) {
-  return <vstack maxHeight="70">
-      {Array.from(ingredients.split("\n").entries()).map((value: [number, string]) => <text size="medium" width='70' wrap>{ "- " + value[1]}</text>)}
+  return <vstack maxHeight="75%">
+      {ingredients.split("\n").map((ingredient: string) => <text size="medium" wrap>{ "- " + ingredient}</text>)}
     </vstack>
 }
 
 function formatInstructions(instructions: string) {
-  return <vstack maxHeight="90">
+  return <vstack maxHeight="90%">
       {Array.from(instructions.split("\n").entries()).map((value: [number, string]) =>
       <vstack>
-        <text size="medium" width='60' wrap>{(value[0] + 1) + ". " + value[1]}</text>
+        <text size="medium" wrap>{(value[0] + 1) + ". " + value[1]}</text>
       <spacer shape='thin' size='xsmall'></spacer>
       </vstack>)}
     </vstack>
@@ -119,8 +114,6 @@ function htmlForPicture(picture: string) {
             height="100%"
             width="100%"
             resizeMode='cover'
-            // imageHeight={480}
-            // imageWidth={640}
           /></hstack>
 }
 
@@ -173,12 +166,6 @@ Devvit.addCustomPostType({
             required: false,
             defaultValue: data.instructions,
           },
-          { type: 'string',
-            name: 'link',
-            label: 'Link to full recipe',
-            required: false,
-            defaultValue: data.link,
-          },
         ],
         title: 'Edit the Recipe',
         acceptLabel: 'Update',
@@ -189,16 +176,16 @@ Devvit.addCustomPostType({
             url: values.picture,
             type: 'image',
           })
-          await redis.hSet(context.postId!, { title: data.title, picture: values.picture, ingredients: values.ingredients, intro: values.intro ?? "", instructions: values.instructions ?? "", link: values.link ?? "" })
+          await redis.hSet(context.postId!, { title: data.title, picture: values.picture, ingredients: values.ingredients, intro: values.intro ?? "", instructions: values.instructions ?? "" })
         } else {
-          await redis.hSet(context.postId!, { title: data.title, ingredients: values.ingredients, intro: values.intro ?? "", instructions: values.instructions ?? "", link: values.link ?? "" })
+          await redis.hSet(context.postId!, { title: data.title, ingredients: values.ingredients, intro: values.intro ?? "", instructions: values.instructions ?? "" })
         }
       }
     );
     return (
-      <vstack width="98%" height="98%" padding='small'>
+      <vstack height="100%" padding='small'>
         {/* height here in hstack will need to change based on whether the edit button appears */}
-        <hstack width="98%" height="90%" padding='small'>
+        <hstack height="90%" padding='small'>
           <vstack width="40%" alignment="middle" padding='small'>
             {formatIntro(data.intro)}
             <text style='heading' outline='thin'>Ingredients:</text>
@@ -211,7 +198,7 @@ Devvit.addCustomPostType({
             : <vstack/> }
           </vstack>
           { showInstructions ?
-          <vstack gap="none" alignment='middle'>
+          <vstack width="60%" gap="none" alignment='middle'>
             <text style='heading' outline='thin'>Directions:</text>
             {formatInstructions(data.instructions)}
           </vstack>
@@ -219,8 +206,6 @@ Devvit.addCustomPostType({
           htmlForPicture(data!.picture)
           }
         </hstack>
-        {/* {data.link != "" ? <text color="blue" text-decoration="underline" onPress={() => context.ui.navigateTo(data.link)}>{data.link}</text>
-        : <vstack/>} */}
         <button onPress={() => context.ui.showForm(editForm)}>Edit</button>
       </vstack>
     );
