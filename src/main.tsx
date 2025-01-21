@@ -22,6 +22,50 @@ async function makeRecipePost(redis: RedisClient, reddit: RedditAPIClient, title
   return post.id
 }
 
+// Add a menu item to the subreddit menu for instantiating the new experience post
+Devvit.addMenuItem({
+  label: "Post a New Recipe",
+  location: 'subreddit',
+  forUserType: 'moderator',
+  onPress: async (_, context) => {
+    const { reddit, ui } = context;
+    ui.showForm(postForm);
+ },
+});
+
+function formatIntro(intro: string) {
+  return intro != "" ?
+    <vstack backgroundColor='#cccccc' borderColor='black' cornerRadius='medium' width="93%" padding='small'>
+      <text wrap color='black' alignment='center middle' weight='bold'>{intro}</text>
+    </vstack>
+    : <vstack/>
+}
+
+function formatIngredients(ingredients: string) {
+  return <vstack maxHeight="75%">
+      {ingredients.split("\n").map((ingredient: string) => <text size="medium" wrap>{ "- " + ingredient}</text>)}
+    </vstack>
+}
+
+function formatInstructions(instructions: string) {
+  return <vstack maxHeight="90%">
+      {Array.from(instructions.split("\n").entries()).map((value: [number, string]) =>
+      <vstack>
+        <text size="medium" wrap>{(value[0] + 1) + ". " + value[1]}</text>
+      <spacer shape='thin' size='xsmall'></spacer>
+      </vstack>)}
+    </vstack>
+}
+
+function htmlForPicture(picture: string) {
+  return <hstack cornerRadius='large' height='100%' alignment='middle' grow>
+          <image url={picture}
+            description="cookie"
+            height="100%"
+            width="100%"
+            resizeMode='cover'
+          /></hstack>
+}
 
 const postForm = Devvit.createForm(
   (data) => {
@@ -72,56 +116,12 @@ const postForm = Devvit.createForm(
   }
 );
 
-// Add a menu item to the subreddit menu for instantiating the new experience post
-Devvit.addMenuItem({
-  label: "Post a New Recipe",
-  location: 'subreddit',
-  forUserType: 'moderator',
-  onPress: async (_, context) => {
-    const { reddit, ui } = context;
-    ui.showForm(postForm);
- },
-});
-
-function formatIntro(intro: string) {
-  return intro != "" ?
-    <vstack backgroundColor='#cccccc' borderColor='black' cornerRadius='medium' width="93%" padding='small'>
-      <text wrap color='black' alignment='center middle' weight='bold'>{intro}</text>
-    </vstack>
-    : <vstack/>
-}
-
-function formatIngredients(ingredients: string) {
-  return <vstack maxHeight="75%">
-      {ingredients.split("\n").map((ingredient: string) => <text size="medium" wrap>{ "- " + ingredient}</text>)}
-    </vstack>
-}
-
-function formatInstructions(instructions: string) {
-  return <vstack maxHeight="90%">
-      {Array.from(instructions.split("\n").entries()).map((value: [number, string]) =>
-      <vstack>
-        <text size="medium" wrap>{(value[0] + 1) + ". " + value[1]}</text>
-      <spacer shape='thin' size='xsmall'></spacer>
-      </vstack>)}
-    </vstack>
-}
-
-function htmlForPicture(picture: string) {
-  return <hstack cornerRadius='large' height='95%' alignment='middle' grow>
-          <image url={picture}
-            description="cookie"
-            height="100%"
-            width="100%"
-            resizeMode='cover'
-          /></hstack>
-}
-
 Devvit.addCustomPostType({
   name: 'Experience Post',
   height: 'tall',
   render: (context) => {
     const [showInstructions, setShowInstructions] = useState(false);
+    const [showMenu, setShowMenu] = useState(false);
     const { data, loading, error } = useAsync(async () => {
       return await context.redis.hGetAll(context.postId!);
     });
@@ -136,6 +136,52 @@ Devvit.addCustomPostType({
     if (!data) {
       return <text>No data available</text>;
     }
+    const postForm = useForm(
+      {
+        fields: [
+          {
+            type: 'string',
+            name: 'title',
+            label: 'Title',
+            required: true,
+          },
+          {
+            type: 'image',
+            name: 'picture',
+            label: 'Picture of the result',
+            required: true,
+          },
+          {
+            type: 'string',
+            name: 'intro',
+            label: 'One-liner intro note. (Servings / time / pre-heat temperature; Optional)',
+            required: false,
+          },
+          {
+            type: 'paragraph',
+            name: 'ingredients',
+            label: 'Ingredients: (One per line with measurements.)',
+            required: true,
+          },
+          {
+            type: 'paragraph',
+            name: 'instructions',
+            label: 'Instructions: (One step per line. Do not number.)',
+            required: false,
+          },
+        ],
+        title: 'Post a Recipe',
+        acceptLabel: 'Post',
+      }, async (values) => {
+        const { redis, reddit, ui } = context
+        const { title, picture, intro, ingredients, instructions } = values
+        const response = await context.media.upload({
+          url: picture,
+          type: 'image',
+        })
+        const postId = await makeRecipePost(redis, reddit, title, response.mediaUrl, ingredients, intro ?? "", instructions ?? "" )
+      }
+    );
     const editForm = useForm(
       {
         fields: [
@@ -183,31 +229,46 @@ Devvit.addCustomPostType({
       }
     );
     return (
-      <vstack height="100%" padding='small'>
-        {/* height here in hstack will need to change based on whether the edit button appears */}
-        <hstack height="90%" padding='small'>
-          <vstack width="40%" alignment="middle" padding='small'>
-            {formatIntro(data.intro)}
-            <text style='heading' outline='thin'>Ingredients:</text>
-            {formatIngredients(data.ingredients)}
-            {data.instructions != "" ?
-            <vstack>
-              <spacer></spacer>
-              <button width="93%" onPress={() => setShowInstructions(!showInstructions)}>{showInstructions ? "Picture" : "Instructions"}</button>
+      <zstack width="100%" height="100%">
+        <vstack width="100%" height="100%" padding='small'>
+          {/* height here in hstack will need to change based on whether the edit button appears */}
+          <hstack height="100%" padding='small'>
+            <vstack width="40%" alignment="middle" padding='small'>
+              {formatIntro(data.intro)}
+              <text style='heading' outline='thin'>Ingredients:</text>
+              {formatIngredients(data.ingredients)}
+              {data.instructions != "" ?
+              <vstack>
+                <spacer></spacer>
+                <button width="93%" onPress={() => setShowInstructions(!showInstructions)}>{showInstructions ? "Picture" : "Instructions"}</button>
+              </vstack>
+              : <vstack/> }
             </vstack>
-            : <vstack/> }
-          </vstack>
-          { showInstructions ?
-          <vstack width="60%" gap="none" alignment='middle'>
-            <text style='heading' outline='thin'>Directions:</text>
-            {formatInstructions(data.instructions)}
-          </vstack>
-          :
-          htmlForPicture(data!.picture)
-          }
-        </hstack>
-        <button onPress={() => context.ui.showForm(editForm)}>Edit</button>
-      </vstack>
+            { showInstructions ?
+            <vstack width="60%" gap="none" alignment='middle'>
+              <text style='heading' outline='thin'>Directions:</text>
+              {formatInstructions(data.instructions)}
+            </vstack>
+            :
+            htmlForPicture(data!.picture)
+            }
+          </hstack>
+        </vstack>
+        {showMenu ?
+        <vstack width="1000%" height="1000%" onPress={() => setShowMenu(false)}></vstack> :
+        <vstack/> }
+        <vstack>
+          <button onPress={() => setShowMenu(!showMenu)}>...</button>
+          {showMenu ?
+            <vstack>
+              <button icon="edit" onPress={() => context.ui.showForm(editForm)}>Edit</button>
+              <button icon="add" onPress={() => context.ui.showForm(postForm)}>New</button>
+              <button icon="save" onPress={() => console.log("Not yet implemented")}>Save</button>
+              <button icon="comment" onPress={() => console.log("Not yet implemented")}>Comment</button>
+            </vstack>
+           : <vstack/> }
+        </vstack>
+      </zstack>
     );
   },
 });
