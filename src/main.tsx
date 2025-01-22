@@ -7,6 +7,10 @@ Devvit.configure({
   media: true,
 });
 
+function postKey(postId: string): string {
+  return `post-${postId}`
+}
+
 async function makeRecipePost(redis: RedisClient, reddit: RedditAPIClient, title: string, picture: string, ingredients: string, intro: string, instructions: string) {
   const subredditName = (await reddit.getCurrentSubreddit()).name
   const post = await reddit.submitPost({
@@ -19,6 +23,7 @@ async function makeRecipePost(redis: RedisClient, reddit: RedditAPIClient, title
     ),
   });
   await redis.hSet(post.id, { title: title, picture: picture, ingredients: ingredients, instructions: instructions })
+  await redis.hSet(postKey(post.id), { title: title, picture: picture, ingredients: ingredients, instructions: instructions })
   return post.id
 }
 
@@ -227,8 +232,10 @@ Devvit.addCustomPostType({
             type: 'image',
           })
           await redis.hSet(context.postId!, { title: data.title, picture: values.picture, ingredients: values.ingredients, intro: values.intro ?? "", instructions: values.instructions ?? "" })
+          await redis.hSet(postKey(context.postId!), { title: data.title, picture: values.picture, ingredients: values.ingredients, intro: values.intro ?? "", instructions: values.instructions ?? "" })
         } else {
           await redis.hSet(context.postId!, { title: data.title, ingredients: values.ingredients, intro: values.intro ?? "", instructions: values.instructions ?? "" })
+          await redis.hSet(postKey(context.postId!), { title: data.title, ingredients: values.ingredients, intro: values.intro ?? "", instructions: values.instructions ?? "" })
         }
       }
     );
