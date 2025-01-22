@@ -255,16 +255,16 @@ Devvit.addCustomPostType({
           </hstack>
         </vstack>
         {showMenu ?
-        <vstack width="1000%" height="1000%" onPress={() => setShowMenu(false)}></vstack> :
+        <vstack width="100%" height="100%" onPress={() => setShowMenu(false)}></vstack> :
         <vstack/> }
         <vstack>
-          <button onPress={() => setShowMenu(!showMenu)}>...</button>
+          <button onPress={() => setShowMenu(!showMenu)} icon={showMenu ? "close" : "overflow-horizontal"}></button>
           {showMenu ?
-            <vstack>
-              <button icon="edit" onPress={() => context.ui.showForm(editForm)}>Edit</button>
-              <button icon="add" onPress={() => context.ui.showForm(postForm)}>New</button>
-              <button icon="save" onPress={() => console.log("Not yet implemented")}>Save</button>
-              <button icon="comment" onPress={() => console.log("Not yet implemented")}>Comment</button>
+            <vstack darkBackgroundColor='rgb(26, 40, 45)' lightBackgroundColor='rgb(234, 237, 239)' cornerRadius='medium'>
+              <hstack padding="small" onPress={() => context.ui.showForm(editForm)}><spacer/><icon name="edit"></icon><spacer/><text>Edit</text><spacer/></hstack>
+              <hstack padding="small" onPress={() => context.ui.showForm(postForm)}><spacer/><icon name="add"></icon><spacer/><text>New</text><spacer/></hstack>
+              <hstack padding="small" onPress={() => console.log("Not yet implemented")}><spacer/><icon name="save"></icon><spacer/><text>Save</text><spacer/></hstack>
+              <hstack padding="small" onPress={() => console.log("Not yet implemented")}><spacer/><icon name="comment"></icon><spacer/><text>Comment</text><spacer/></hstack>
             </vstack>
            : <vstack/> }
         </vstack>
