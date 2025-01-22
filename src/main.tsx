@@ -125,12 +125,32 @@ const postForm = Devvit.createForm(
   }
 );
 
+function userKey(userId: string) {
+  return `user-${userId}`
+}
+
+function savePost(context: Devvit.Context) {
+  const postId = context.postId!
+  context.reddit.submitComment({text: "I'm saving this Reddcipe for later!", id: postId})
+  if (context.userId != undefined) {
+      context.redis.hSet(userKey(context.userId!), {postId : "true"} )
+  }
+}
+
+function unsavePost(context: Devvit.Context) {
+  const postId = context.postId!
+  if (context.userId != undefined) {
+      context.redis.hDel(userKey(context.userId!), [postId])
+  }
+}
+
 Devvit.addCustomPostType({
   name: 'Experience Post',
   height: 'tall',
   render: (context) => {
     const [showInstructions, setShowInstructions] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
+    const [isSaved, setIsSaved] = useState(false);
     const { data, loading, error } = useAsync(async () => {
       return await context.redis.hGetAll(context.postId!);
     });
@@ -274,7 +294,7 @@ Devvit.addCustomPostType({
             <vstack darkBackgroundColor='rgb(26, 40, 45)' lightBackgroundColor='rgb(234, 237, 239)' cornerRadius='medium'>
               <hstack padding="small" onPress={() => context.ui.showForm(editForm)}><spacer/><icon lightColor='black' darkColor='white' name="edit"></icon><spacer/><text lightColor='black' darkColor='white' weight="bold">Edit</text><spacer/></hstack>
               <hstack padding="small" onPress={() => context.ui.showForm(postForm)}><spacer/><icon lightColor='black' darkColor='white' name="add"></icon><spacer/><text lightColor='black' darkColor='white' weight="bold">New</text><spacer/></hstack>
-              <hstack padding="small" onPress={() => console.log("Not yet implemented")}><spacer/><icon lightColor='black' darkColor='white' name="save"></icon><spacer/><text lightColor='black' darkColor='white' weight="bold">Save</text><spacer/></hstack>
+              <hstack padding="small" onPress={async () => {setIsSaved(!isSaved); if (isSaved) savePost(context); else unsavePost(context)}}><spacer/><icon lightColor='black' darkColor='white' name={isSaved ? "save-fill" : "save"}></icon><spacer/><text lightColor='black' darkColor='white' weight="bold">{isSaved ? "Unsave" : "Save"}</text><spacer/></hstack>
               <hstack padding="small" onPress={() => console.log("Not yet implemented")}><spacer/><icon lightColor='black' darkColor='white' name="comment"></icon><spacer/><text lightColor='black' darkColor='white' weight="bold">Comment</text><spacer/></hstack>
             </vstack>
            : <vstack/> }
