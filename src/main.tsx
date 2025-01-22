@@ -59,7 +59,7 @@ function formatInstructions(instructions: string) {
         <hstack>
         <text weight='bold' size="large" wrap>{(value[0] + 1) + ". "}</text>
         <spacer shape='thin' size='xsmall'></spacer>
-        <text size='medium' wrap>{value[1]}</text>
+        <text size='medium' width="100%" wrap>{value[1]}</text>
         </hstack>
       <spacer shape='thin' size='xsmall'></spacer>
       </vstack>)}
@@ -262,7 +262,6 @@ Devvit.addCustomPostType({
     return (
       <zstack width="100%" height="100%">
         <vstack width="100%" height="100%" padding='small'>
-          {/* height here in hstack will need to change based on whether the edit button appears */}
           <hstack height="100%" padding='small'>
             <vstack width="40%" alignment="middle" padding='small'>
               {formatIntro(data.intro)}
@@ -288,8 +287,8 @@ Devvit.addCustomPostType({
         {showMenu ?
         <vstack width="100%" height="100%" onPress={() => setShowMenu(false)}></vstack> :
         <vstack/> }
-        <vstack>
-          <button onPress={() => setShowMenu(!showMenu)} icon={showMenu ? "close" : "overflow-horizontal"}></button>
+        <vstack padding='small'>
+          <button appearance='plain' onPress={() => setShowMenu(!showMenu)} icon={showMenu ? "close" : "overflow-horizontal"}></button>
           {showMenu ?
             <vstack darkBackgroundColor='rgb(26, 40, 45)' lightBackgroundColor='rgb(234, 237, 239)' cornerRadius='medium'>
               <hstack padding="small" onPress={() => context.ui.showForm(editForm)}><spacer/><icon lightColor='black' darkColor='white' name="edit"></icon><spacer/><text lightColor='black' darkColor='white' weight="bold">Edit</text><spacer/></hstack>
