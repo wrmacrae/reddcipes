@@ -35,8 +35,8 @@ Devvit.addMenuItem({
 
 function formatIntro(intro: string) {
   return intro != "" ?
-    <vstack backgroundColor='#cccccc' borderColor='black' cornerRadius='medium' width="93%" padding='small'>
-      <text wrap color='black' alignment='center middle' weight='bold'>{intro}</text>
+    <vstack backgroundColor='transparent' borderColor='primary' cornerRadius='small' width="93%" padding='small'>
+      <text wrap color='primary' alignment='center middle' weight='bold'>{intro}</text>
     </vstack>
     : <vstack/>
 }
@@ -51,7 +51,11 @@ function formatInstructions(instructions: string) {
   return <vstack maxHeight="90%">
       {Array.from(instructions.split("\n").entries()).map((value: [number, string]) =>
       <vstack>
-        <text size="medium" wrap>{(value[0] + 1) + ". " + value[1]}</text>
+        <hstack>
+        <text weight='bold' size="large" wrap>{(value[0] + 1) + ". "}</text>
+        <spacer shape='thin' size='xsmall'></spacer>
+        <text size='medium' wrap>{value[1]}</text>
+        </hstack>
       <spacer shape='thin' size='xsmall'></spacer>
       </vstack>)}
     </vstack>
@@ -240,7 +244,7 @@ Devvit.addCustomPostType({
               {data.instructions != "" ?
               <vstack>
                 <spacer></spacer>
-                <button width="93%" onPress={() => setShowInstructions(!showInstructions)}>{showInstructions ? "Picture" : "Instructions"}</button>
+                <button width="93%" appearance='primary' onPress={() => setShowInstructions(!showInstructions)}>{showInstructions ? "Picture" : "Instructions"}</button>
               </vstack>
               : <vstack/> }
             </vstack>
