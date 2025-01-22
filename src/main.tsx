@@ -265,10 +265,10 @@ Devvit.addCustomPostType({
           <button onPress={() => setShowMenu(!showMenu)} icon={showMenu ? "close" : "overflow-horizontal"}></button>
           {showMenu ?
             <vstack darkBackgroundColor='rgb(26, 40, 45)' lightBackgroundColor='rgb(234, 237, 239)' cornerRadius='medium'>
-              <hstack padding="small" onPress={() => context.ui.showForm(editForm)}><spacer/><icon name="edit"></icon><spacer/><text>Edit</text><spacer/></hstack>
-              <hstack padding="small" onPress={() => context.ui.showForm(postForm)}><spacer/><icon name="add"></icon><spacer/><text>New</text><spacer/></hstack>
-              <hstack padding="small" onPress={() => console.log("Not yet implemented")}><spacer/><icon name="save"></icon><spacer/><text>Save</text><spacer/></hstack>
-              <hstack padding="small" onPress={() => console.log("Not yet implemented")}><spacer/><icon name="comment"></icon><spacer/><text>Comment</text><spacer/></hstack>
+              <hstack padding="small" onPress={() => context.ui.showForm(editForm)}><spacer/><icon lightColor='black' darkColor='white' name="edit"></icon><spacer/><text lightColor='black' darkColor='white' weight="bold">Edit</text><spacer/></hstack>
+              <hstack padding="small" onPress={() => context.ui.showForm(postForm)}><spacer/><icon lightColor='black' darkColor='white' name="add"></icon><spacer/><text lightColor='black' darkColor='white' weight="bold">New</text><spacer/></hstack>
+              <hstack padding="small" onPress={() => console.log("Not yet implemented")}><spacer/><icon lightColor='black' darkColor='white' name="save"></icon><spacer/><text lightColor='black' darkColor='white' weight="bold">Save</text><spacer/></hstack>
+              <hstack padding="small" onPress={() => console.log("Not yet implemented")}><spacer/><icon lightColor='black' darkColor='white' name="comment"></icon><spacer/><text lightColor='black' darkColor='white' weight="bold">Comment</text><spacer/></hstack>
             </vstack>
            : <vstack/> }
         </vstack>
