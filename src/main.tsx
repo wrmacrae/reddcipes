@@ -53,13 +53,17 @@ function formatIngredients(ingredients: string) {
 }
 
 function formatInstructions(instructions: string) {
+  const [textColor, setTextColor] = useState('neutral-content-strong');
+  const changeColor = () => {
+    setTextColor(textColor === 'neutral-content-strong' ? 'neutral-content-weak' : 'neutral-content-strong');
+  };
   return <vstack maxHeight="90%">
       {Array.from(instructions.split("\n").entries()).map((value: [number, string]) =>
       <vstack>
         <hstack>
         <text weight='bold' size="large" wrap>{(value[0] + 1) + ". "}</text>
         <spacer shape='thin' size='xsmall'></spacer>
-        <text size='medium' width="100%" wrap>{value[1]}</text>
+        <text size='medium' width="100%" wrap color={textColor} onPress={changeColor}>{value[1]}</text>
         </hstack>
       <spacer shape='thin' size='xsmall'></spacer>
       </vstack>)}
