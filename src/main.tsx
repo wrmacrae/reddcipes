@@ -1,5 +1,5 @@
 // Learn more at developers.reddit.com/docs
-import { Devvit, RedditAPIClient, RedisClient, useForm, useState, useAsync } from '@devvit/public-api';
+import { Devvit, RedditAPIClient, RedisClient, useForm, useState, useAsync, StateSetter } from '@devvit/public-api';
 
 Devvit.configure({
   redditAPI: true,
@@ -9,6 +9,10 @@ Devvit.configure({
 
 function postKey(postId: string): string {
   return `post-${postId}`
+}
+
+function formatTextRecipe(title: string, intro: string, ingredients: string, instructions: string) {
+  return `${title}\n${intro}\nIngredients:${ingredients.split("\n").map((ingredient) => "- " + ingredient).join("\n")}\nInstructions${Array.from(instructions.split("\n").entries()).map((value: [number, string]) => (value[0] + 1) + ". " + value[1]).join("\n")}`
 }
 
 async function makeRecipePost(redis: RedisClient, reddit: RedditAPIClient, title: string, picture: string, ingredients: string, intro: string, instructions: string) {
@@ -22,8 +26,9 @@ async function makeRecipePost(redis: RedisClient, reddit: RedditAPIClient, title
       </vstack>
     ),
   });
-  await redis.hSet(post.id, { title: title, picture: picture, ingredients: ingredients, instructions: instructions })
-  await redis.hSet(postKey(post.id), { title: title, picture: picture, ingredients: ingredients, instructions: instructions })
+  await redis.hSet(post.id, { title: title, picture: picture, ingredients: ingredients, instructions: instructions, intro: intro })
+  await redis.hSet(postKey(post.id), { title: title, picture: picture, ingredients: ingredients, instructions: instructions, intro: intro })
+  reddit.submitComment({text: formatTextRecipe(title, intro, ingredients, instructions), id: post.id})
   return post.id
 }
 
@@ -52,14 +57,19 @@ function formatIngredients(ingredients: string) {
     </vstack>
 }
 
-function formatInstructions(instructions: string) {
+function colorChangerMaker(index: number, clickedInstruction: boolean[], setClickedInstruction: StateSetter<boolean[]>) {
+  return () => {clickedInstruction[index] = !clickedInstruction[index]
+    setClickedInstruction(clickedInstruction)}
+}
+
+function formatInstructions(instructions: string, clickedInstruction: boolean[], setClickedInstruction: StateSetter<boolean[]>) {
   return <vstack maxHeight="90%">
       {Array.from(instructions.split("\n").entries()).map((value: [number, string]) =>
       <vstack>
         <hstack>
-        <text weight='bold' size="large" wrap>{(value[0] + 1) + ". "}</text>
-        <spacer shape='thin' size='xsmall'></spacer>
-        <text size='medium' width="100%" wrap>{value[1]}</text>
+          <text weight='bold' size="large" wrap>{(value[0] + 1) + ". "}</text>
+          <spacer shape='thin' size='xsmall'></spacer>
+          <text size='medium' width="100%" wrap color={clickedInstruction[value[0]] ?? false ? 'neutral-content-weak' : 'neutral-content-strong'} onPress={colorChangerMaker(value[0], clickedInstruction, setClickedInstruction)}>{value[1]}</text>
         </hstack>
       <spacer shape='thin' size='xsmall'></spacer>
       </vstack>)}
@@ -151,6 +161,7 @@ Devvit.addCustomPostType({
     const [showInstructions, setShowInstructions] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
     const [isSaved, setIsSaved] = useState(false);
+
     const { data, loading, error } = useAsync(async () => {
       return await context.redis.hGetAll(context.postId!);
     });
@@ -165,6 +176,7 @@ Devvit.addCustomPostType({
     if (!data) {
       return <text>No data available</text>;
     }
+    const [clickedInstruction, setClickedInstruction] = useState(Array(data.instructions.split("\n").length).fill(false));
     const postForm = useForm(
       {
         fields: [
@@ -265,6 +277,7 @@ Devvit.addCustomPostType({
           <hstack height="100%" padding='small'>
             <vstack width="40%" alignment="middle" padding='small'>
               {formatIntro(data.intro)}
+              <spacer></spacer>
               <text style='heading' outline='thin'>Ingredients:</text>
               {formatIngredients(data.ingredients)}
               {data.instructions != "" ?
@@ -277,7 +290,7 @@ Devvit.addCustomPostType({
             { showInstructions ?
             <vstack width="60%" gap="none" alignment='middle'>
               <text style='heading' outline='thin'>Directions:</text>
-              {formatInstructions(data.instructions)}
+              {formatInstructions(data.instructions, clickedInstruction, setClickedInstruction)}
             </vstack>
             :
             htmlForPicture(data!.picture)
@@ -288,13 +301,13 @@ Devvit.addCustomPostType({
         <vstack width="100%" height="100%" onPress={() => setShowMenu(false)}></vstack> :
         <vstack/> }
         <vstack padding='small'>
-          <button appearance='plain' onPress={() => setShowMenu(!showMenu)} icon={showMenu ? "close" : "overflow-horizontal"}></button>
+          <button appearance="bordered" onPress={() => setShowMenu(!showMenu)} icon={showMenu ? "close" : "overflow-horizontal"}></button>
           {showMenu ?
             <vstack darkBackgroundColor='rgb(26, 40, 45)' lightBackgroundColor='rgb(234, 237, 239)' cornerRadius='medium'>
-              <hstack padding="small" onPress={() => context.ui.showForm(editForm)}><spacer/><icon lightColor='black' darkColor='white' name="edit"></icon><spacer/><text lightColor='black' darkColor='white' weight="bold">Edit</text><spacer/></hstack>
-              <hstack padding="small" onPress={() => context.ui.showForm(postForm)}><spacer/><icon lightColor='black' darkColor='white' name="add"></icon><spacer/><text lightColor='black' darkColor='white' weight="bold">New</text><spacer/></hstack>
-              <hstack padding="small" onPress={async () => {setIsSaved(!isSaved); if (isSaved) savePost(context); else unsavePost(context)}}><spacer/><icon lightColor='black' darkColor='white' name={isSaved ? "save-fill" : "save"}></icon><spacer/><text lightColor='black' darkColor='white' weight="bold">{isSaved ? "Unsave" : "Save"}</text><spacer/></hstack>
-              <hstack padding="small" onPress={() => console.log("Not yet implemented")}><spacer/><icon lightColor='black' darkColor='white' name="comment"></icon><spacer/><text lightColor='black' darkColor='white' weight="bold">Comment</text><spacer/></hstack>
+              <hstack padding="small" onPress={() => context.ui.showForm(editForm)}><spacer/><icon lightColor='black' darkColor='white' name="edit" /><spacer/><text lightColor='black' darkColor='white' weight="bold">Edit</text><spacer/></hstack>
+              <hstack padding="small" onPress={() => context.ui.showForm(postForm)}><spacer/><icon lightColor='black' darkColor='white' name="add" /><spacer/><text lightColor='black' darkColor='white' weight="bold">New</text><spacer/></hstack>
+              <hstack padding="small" onPress={async () => {setIsSaved(!isSaved); if (isSaved) savePost(context); else unsavePost(context)}}><spacer/><icon lightColor='black' darkColor='white' name={isSaved ? "save-fill" : "save"} /><spacer/><text lightColor='black' darkColor='white' weight="bold">{isSaved ? "Unsave" : "Save"}</text><spacer/></hstack>
+              {/* <hstack padding="small" onPress={() => console.log("Not yet implemented")}><spacer/><icon lightColor='black' darkColor='white' name="comment" /><spacer/><text lightColor='black' darkColor='white' weight="bold">Comment</text><spacer/></hstack> */}
             </vstack>
            : <vstack/> }
         </vstack>
