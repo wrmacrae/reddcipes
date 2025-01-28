@@ -12,7 +12,7 @@ function postKey(postId: string): string {
 }
 
 function formatTextRecipe(title: string, intro: string, ingredients: string, instructions: string) {
-  return `${title}\n${intro}\nIngredients:${ingredients.split("\n").map((ingredient) => "- " + ingredient).join("\n")}\nInstructions${Array.from(instructions.split("\n").entries()).map((value: [number, string]) => (value[0] + 1) + ". " + value[1]).join("\n")}`
+  return `${title}\n${intro}\nIngredients:\n${ingredients.split("\n").map((ingredient) => "- " + ingredient).join("\n")}\nInstructions:\n${Array.from(instructions.split("\n").entries()).map((value: [number, string]) => (value[0] + 1) + ". " + value[1]).join("\n")}`
 }
 
 async function makeRecipePost(redis: RedisClient, reddit: RedditAPIClient, title: string, picture: string, ingredients: string, intro: string, instructions: string) {
