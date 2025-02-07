@@ -51,9 +51,11 @@ function formatIntro(intro: string) {
     : <vstack/>
 }
 
-function formatIngredients(ingredients: string) {
+const INGREDIENTS_PER_PAGE = 10
+
+function formatIngredients(ingredients: string, ingredientsPage: number) {
   return <vstack maxHeight="75%">
-      {ingredients.split("\n").map((ingredient: string) => <text size="medium" wrap>{ "- " + ingredient}</text>)}
+      {ingredients.split("\n").slice(ingredientsPage*INGREDIENTS_PER_PAGE, (ingredientsPage+1)*INGREDIENTS_PER_PAGE).map((ingredient: string) => <text size="medium" wrap>{ "- " + ingredient}</text>)}
     </vstack>
 }
 
@@ -62,14 +64,16 @@ function colorChangerMaker(index: number, clickedInstruction: boolean[], setClic
     setClickedInstruction(clickedInstruction)}
 }
 
-function formatInstructions(instructions: string, clickedInstruction: boolean[], setClickedInstruction: StateSetter<boolean[]>) {
+const INSTRUCTIONS_PER_PAGE = 8
+
+function formatInstructions(instructions: string, clickedInstruction: boolean[], setClickedInstruction: StateSetter<boolean[]>, instructionsPage: number) {
   return <vstack maxHeight="90%">
-      {Array.from(instructions.split("\n").entries()).map((value: [number, string]) =>
+      {Array.from(instructions.split("\n").slice(instructionsPage*INSTRUCTIONS_PER_PAGE, (instructionsPage+1)*INSTRUCTIONS_PER_PAGE).entries()).map((value: [number, string]) =>
       <vstack>
         <hstack>
-          <text weight='bold' size="large" wrap>{(value[0] + 1) + ". "}</text>
+          <text weight='bold' size="large" wrap>{(instructionsPage*INSTRUCTIONS_PER_PAGE + value[0] + 1) + ". "}</text>
           <spacer shape='thin' size='xsmall'></spacer>
-          <text size='medium' width="100%" wrap color={clickedInstruction[value[0]] ?? false ? 'neutral-content-weak' : 'neutral-content-strong'} onPress={colorChangerMaker(value[0], clickedInstruction, setClickedInstruction)}>{value[1]}</text>
+          <text size='medium' width="100%" wrap color={clickedInstruction[instructionsPage*INSTRUCTIONS_PER_PAGE + value[0]] ?? false ? 'neutral-content-weak' : 'neutral-content-strong'} onPress={colorChangerMaker(instructionsPage*INSTRUCTIONS_PER_PAGE + value[0], clickedInstruction, setClickedInstruction)}>{value[1]}</text>
         </hstack>
       <spacer shape='thin' size='xsmall'></spacer>
       </vstack>)}
@@ -161,6 +165,8 @@ Devvit.addCustomPostType({
     const [showInstructions, setShowInstructions] = useState(false);
     const [showMenu, setShowMenu] = useState(false);
     const [isSaved, setIsSaved] = useState(false);
+    const [ingredientsPage, setIngredientsPage] = useState(0);
+    const [instructionsPage, setInstructionsPage] = useState(0);
 
     const { data, loading, error } = useAsync(async () => {
       return await context.redis.hGetAll(context.postId!);
@@ -279,7 +285,9 @@ Devvit.addCustomPostType({
               {formatIntro(data.intro)}
               <spacer></spacer>
               <text style='heading' outline='thin'>Ingredients:</text>
-              {formatIngredients(data.ingredients)}
+              <hstack alignment='center'>{ingredientsPage > 0 ? <icon name="caret-up" size="medium" onPress={() => setIngredientsPage(ingredientsPage-1)}/> : <vstack/>}</hstack>
+              {formatIngredients(data.ingredients, ingredientsPage)}
+              <hstack alignment='center'>{(ingredientsPage+1)*INGREDIENTS_PER_PAGE < data.ingredients.split("\n").length ? <icon name="caret-down" size="medium" onPress={() => setIngredientsPage(ingredientsPage+1)}/> : <vstack/>}</hstack>
               {data.instructions != "" ?
               <vstack>
                 <spacer></spacer>
@@ -289,8 +297,10 @@ Devvit.addCustomPostType({
             </vstack>
             { showInstructions ?
             <vstack width="60%" gap="none" alignment='middle'>
+              <hstack alignment='center'>{instructionsPage > 0 ? <icon name="caret-up" size="medium" onPress={() => setInstructionsPage(instructionsPage-1)}/> : <vstack/>}</hstack>
               <text style='heading' outline='thin'>Directions:</text>
-              {formatInstructions(data.instructions, clickedInstruction, setClickedInstruction)}
+              {formatInstructions(data.instructions, clickedInstruction, setClickedInstruction, instructionsPage)}
+              <hstack alignment='center'>{(instructionsPage+1)*INSTRUCTIONS_PER_PAGE < clickedInstruction.length ? <icon name="caret-down" size="medium" onPress={() => setInstructionsPage(instructionsPage+1)}/> : <vstack/>}</hstack>
             </vstack>
             :
             htmlForPicture(data!.picture)
