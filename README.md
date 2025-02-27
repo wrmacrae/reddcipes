@@ -1,6 +1,6 @@
-## Reddcipes
+## Reciposts
 
-Reddcipes is a simple, straightforward tool for posting recipes to Reddit. Its UI allows communities to post, share and save recipes as well as mark their progress when following the recipe! 
+Reciposts is a simple, straightforward tool for posting recipes to Reddit. Its UI allows communities to post, share and save recipes as well as mark their progress when following the recipe! 
 
 #### Directions
 - Find an existing recipe and click `New`

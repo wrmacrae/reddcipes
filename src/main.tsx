@@ -144,7 +144,7 @@ function userKey(userId: string) {
 
 function savePost(context: Devvit.Context) {
   const postId = context.postId!
-  context.reddit.submitComment({text: "I'm saving this Reddcipe for later!", id: postId})
+  context.reddit.submitComment({text: "I'm saving this Recipost for later!", id: postId})
   if (context.userId != undefined) {
       context.redis.hSet(userKey(context.userId!), {postId : "true"} )
   }
