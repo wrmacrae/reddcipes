@@ -15,9 +15,9 @@ function formatTextRecipe(title: string, intro: string, ingredients: string, ins
   return `${title}\n${intro}\nIngredients:\n${ingredients.split("\n").map((ingredient) => "- " + ingredient).join("\n")}\nInstructions:\n${Array.from(instructions.split("\n").entries()).map((value: [number, string]) => (value[0] + 1) + ". " + value[1]).join("\n")}`
 }
 
-async function makeRecipePost(redis: RedisClient, reddit: RedditAPIClient, title: string, picture: string, ingredients: string, intro: string, instructions: string) {
-  const subredditName = (await reddit.getCurrentSubreddit()).name
-  const post = await reddit.submitPost({
+async function makeRecipePost(context: Devvit.Context, title: string, picture: string, ingredients: string, intro: string, instructions: string) {
+  const subredditName = (await context.reddit.getCurrentSubreddit()).name
+  const post = await context.reddit.submitPost({
     title: title,
     subredditName: subredditName,
     preview: (
@@ -26,9 +26,9 @@ async function makeRecipePost(redis: RedisClient, reddit: RedditAPIClient, title
       </vstack>
     ),
   });
-  await redis.hSet(post.id, { title: title, picture: picture, ingredients: ingredients, instructions: instructions, intro: intro })
-  await redis.hSet(postKey(post.id), { title: title, picture: picture, ingredients: ingredients, instructions: instructions, intro: intro })
-  reddit.submitComment({text: formatTextRecipe(title, intro, ingredients, instructions), id: post.id})
+  await context.redis.hSet(post.id, { title: title, picture: picture, ingredients: ingredients, instructions: instructions, intro: intro, author: context.userId! })
+  await context.redis.hSet(postKey(post.id), { title: title, picture: picture, ingredients: ingredients, instructions: instructions, intro: intro, author: context.userId! })
+  context.reddit.submitComment({text: formatTextRecipe(title, intro, ingredients, instructions), id: post.id})
   return post.id
 }
 
@@ -129,13 +129,12 @@ const postForm = Devvit.createForm(
        acceptLabel: 'Post',
       } as const; 
     }, async ({ values }, context) => {
-    const { redis, reddit, ui } = context
     const { title, picture, intro, ingredients, instructions } = values
     const response = await context.media.upload({
       url: picture,
       type: 'image',
     })
-    const postId = await makeRecipePost(redis, reddit, title, response.mediaUrl, ingredients, intro ?? "", instructions ?? "" )
+    const postId = await makeRecipePost(context, title, response.mediaUrl, ingredients, intro ?? "", instructions ?? "" )
   }
 );
 
@@ -220,13 +219,12 @@ Devvit.addCustomPostType({
         title: 'Post a Recipe',
         acceptLabel: 'Post',
       }, async (values) => {
-        const { redis, reddit, ui } = context
         const { title, picture, intro, ingredients, instructions } = values
         const response = await context.media.upload({
           url: picture,
           type: 'image',
         })
-        const postId = await makeRecipePost(redis, reddit, title, response.mediaUrl, ingredients, intro ?? "", instructions ?? "" )
+        const postId = await makeRecipePost(context, title, response.mediaUrl, ingredients, intro ?? "", instructions ?? "" )
       }
     );
     const editForm = useForm(
@@ -269,11 +267,11 @@ Devvit.addCustomPostType({
             url: values.picture,
             type: 'image',
           })
-          await redis.hSet(context.postId!, { title: data.title, picture: values.picture, ingredients: values.ingredients, intro: values.intro ?? "", instructions: values.instructions ?? "" })
-          await redis.hSet(postKey(context.postId!), { title: data.title, picture: values.picture, ingredients: values.ingredients, intro: values.intro ?? "", instructions: values.instructions ?? "" })
+          await redis.hSet(context.postId!, { title: data.title, picture: values.picture, ingredients: values.ingredients, intro: values.intro ?? "", instructions: values.instructions ?? "", author: context.userId! })
+          await redis.hSet(postKey(context.postId!), { title: data.title, picture: values.picture, ingredients: values.ingredients, intro: values.intro ?? "", instructions: values.instructions ?? "", author: context.userId! })
         } else {
-          await redis.hSet(context.postId!, { title: data.title, ingredients: values.ingredients, intro: values.intro ?? "", instructions: values.instructions ?? "" })
-          await redis.hSet(postKey(context.postId!), { title: data.title, ingredients: values.ingredients, intro: values.intro ?? "", instructions: values.instructions ?? "" })
+          await redis.hSet(context.postId!, { title: data.title, ingredients: values.ingredients, intro: values.intro ?? "", instructions: values.instructions ?? "", author: context.userId! })
+          await redis.hSet(postKey(context.postId!), { title: data.title, ingredients: values.ingredients, intro: values.intro ?? "", instructions: values.instructions ?? "", author: context.userId! })
         }
       }
     );
@@ -314,7 +312,8 @@ Devvit.addCustomPostType({
           <button appearance="bordered" onPress={() => setShowMenu(!showMenu)} icon={showMenu ? "close" : "overflow-horizontal"}></button>
           {showMenu ?
             <vstack darkBackgroundColor='rgb(26, 40, 45)' lightBackgroundColor='rgb(234, 237, 239)' cornerRadius='medium'>
-              <hstack padding="small" onPress={() => context.ui.showForm(editForm)}><spacer/><icon lightColor='black' darkColor='white' name="edit" /><spacer/><text lightColor='black' darkColor='white' weight="bold">Edit</text><spacer/></hstack>
+              {data.author === context.userId! ? <hstack padding="small" onPress={() => context.ui.showForm(editForm)}><spacer/><icon lightColor='black' darkColor='white' name="edit" /><spacer/><text lightColor='black' darkColor='white' weight="bold">Edit</text><spacer/></hstack>
+              : <hstack/>}
               <hstack padding="small" onPress={() => context.ui.showForm(postForm)}><spacer/><icon lightColor='black' darkColor='white' name="add" /><spacer/><text lightColor='black' darkColor='white' weight="bold">New</text><spacer/></hstack>
               <hstack padding="small" onPress={async () => {setIsSaved(!isSaved); if (isSaved) savePost(context); else unsavePost(context)}}><spacer/><icon lightColor='black' darkColor='white' name={isSaved ? "save-fill" : "save"} /><spacer/><text lightColor='black' darkColor='white' weight="bold">{isSaved ? "Unsave" : "Save"}</text><spacer/></hstack>
               {/* <hstack padding="small" onPress={() => console.log("Not yet implemented")}><spacer/><icon lightColor='black' darkColor='white' name="comment" /><spacer/><text lightColor='black' darkColor='white' weight="bold">Comment</text><spacer/></hstack> */}
